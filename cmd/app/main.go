@@ -46,6 +46,10 @@ func main() {
 		switch r.Method {
 		case http.MethodGet:
 			handler.GetStudentById(w, r)
+		case http.MethodPut:
+			handler.UpdateStudent(w, r)
+		case http.MethodDelete:
+			handler.DeleteStudent(w, r)
 		default:
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		}

@@ -13,6 +13,8 @@ type StudentsRepo interface {
 	CreateStudent(ctx context.Context, s models.Students) (int, error)
 	GetStudents(ctx context.Context) ([]models.Students, error)
 	GetStudentById(ctx context.Context, id int) (*models.Students, error)
+	UpdateStudent(ctx context.Context, s models.Students) error
+	DeleteStudent(ctx context.Context, id int) error
 }
 
 type HandlerFacade struct {
@@ -81,4 +83,42 @@ func (hp *HandlerFacade) GetStudentById(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, "encode error", http.StatusInternalServerError)
 		return
 	}
+}
+
+func (hp *HandlerFacade) UpdateStudent(w http.ResponseWriter, r *http.Request) {
+	var s models.Students
+
+	if err := json.NewDecoder(r.Body).Decode(&s); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	err := hp.repo.UpdateStudent(r.Context(), s)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (hp *HandlerFacade) DeleteStudent(w http.ResponseWriter, r *http.Request) {
+	idStr := r.URL.Query().Get("id")
+	if idStr == "" {
+		http.Error(w, "missing id", http.StatusBadRequest)
+		return
+	}
+
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+
+	err = hp.repo.DeleteStudent(r.Context(), id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }

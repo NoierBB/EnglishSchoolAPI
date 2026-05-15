@@ -36,7 +36,7 @@ func (r *StudentRepository) CreateStudent(ctx context.Context, s models.Students
 func (r *StudentRepository) GetStudents(ctx context.Context) ([]models.Students, error) {
 	var students []models.Students
 
-	const query = `SELECT id, user_id, name, age, level FROM students`
+	const query = `SELECT id, user_id, name, age, level FROM students ORDER BY id`
 	rows, err := r.db.DB.QueryContext(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("select student: %w", err)
@@ -73,4 +73,37 @@ func (r *StudentRepository) GetStudentById(ctx context.Context, id int) (*models
 		return nil, fmt.Errorf("get students by id: %w", err)
 	}
 	return &students, nil
+}
+
+func (r *StudentRepository) UpdateStudent(ctx context.Context, s models.Students) error {
+	const query = `UPDATE students
+					SET user_id = $1, name = $2, age = $3, level = $4
+					WHERE id = $5`
+
+	res, err := r.db.DB.ExecContext(ctx, query, s.UserId, s.Name, s.Age, s.Level, s.Id)
+
+	if err != nil {
+		return fmt.Errorf("update student: %w", err)
+	}
+
+	rows, _ := res.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("student not found")
+	}
+	return nil
+}
+
+func (r *StudentRepository) DeleteStudent(ctx context.Context, id int) error {
+	const query = `DELETE FROM students WHERE id=$1`
+
+	res, err := r.db.DB.ExecContext(ctx, query, id)
+	if err != nil {
+		return fmt.Errorf("delete student: %w", err)
+	}
+
+	rows, _ := res.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("student not found")
+	}
+	return nil
 }
