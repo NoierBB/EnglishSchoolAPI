@@ -30,7 +30,26 @@ func main() {
 	handler := handlers.NewHandlerFacade(studentsRepo)
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/students", handler.GetStudents)
+
+	mux.HandleFunc("/students", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			handler.GetStudents(w, r)
+		case http.MethodPost:
+			handler.CreateStudent(w, r)
+		default:
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
+	mux.HandleFunc("/student", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			handler.GetStudentById(w, r)
+		default:
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
 
 	server := &http.Server{
 		Addr:         ":" + cfg.HTTPPort,
