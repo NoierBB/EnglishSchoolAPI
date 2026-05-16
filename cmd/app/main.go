@@ -26,8 +26,10 @@ func main() {
 	defer database.Close()
 
 	studentsRepo := repositories.NewStudentRepository(database)
+	userRepo := repositories.NewUserRepository(database)
 
 	handler := handlers.NewHandlerFacade(studentsRepo)
+	handlerUser := handlers.NewUserHandlerFacade(userRepo)
 
 	mux := http.NewServeMux()
 
@@ -50,6 +52,29 @@ func main() {
 			handler.UpdateStudent(w, r)
 		case http.MethodDelete:
 			handler.DeleteStudent(w, r)
+		default:
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
+	mux.HandleFunc("/user", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			handlerUser.CreateUser(w, r)
+		case http.MethodGet:
+			handlerUser.GetUserById(w, r)
+		case http.MethodPut:
+			handlerUser.UpdateUser(w, r)
+		case http.MethodDelete:
+			handlerUser.DeleteUser(w, r)
+		default:
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+	mux.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			handlerUser.GetUsers(w, r)
 		default:
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		}
