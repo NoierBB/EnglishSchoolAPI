@@ -2,8 +2,10 @@ package router
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/NoierBB/englishSchool/internal/handlers"
+	"github.com/NoierBB/englishSchool/internal/middleware"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -13,6 +15,11 @@ func NewRouter(
 	groupHandler *handlers.GroupHandlerFacade,
 ) http.Handler {
 	r := chi.NewRouter()
+
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recover)
+	r.Use(middleware.RequestId)
+	r.Use(middleware.Timeout(5 * time.Second))
 
 	r.Route("/students", func(r chi.Router) {
 		r.Get("/", studentHandler.GetStudents)

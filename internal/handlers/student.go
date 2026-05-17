@@ -7,6 +7,7 @@ import (
 
 	"github.com/NoierBB/englishSchool/internal/models"
 	"github.com/NoierBB/englishSchool/internal/services"
+	"github.com/go-chi/chi/v5"
 )
 
 type HandlerFacade struct {
@@ -51,7 +52,7 @@ func (hp *HandlerFacade) GetStudents(w http.ResponseWriter, r *http.Request) {
 
 func (hp *HandlerFacade) GetStudentById(w http.ResponseWriter, r *http.Request) {
 
-	idStr := r.URL.Query().Get("id")
+	idStr := chi.URLParam(r, "id")
 	if idStr == "" {
 		http.Error(w, "missing id", http.StatusBadRequest)
 		return
@@ -95,7 +96,7 @@ func (hp *HandlerFacade) UpdateStudent(w http.ResponseWriter, r *http.Request) {
 }
 
 func (hp *HandlerFacade) DeleteStudent(w http.ResponseWriter, r *http.Request) {
-	idStr := r.URL.Query().Get("id")
+	idStr := chi.URLParam(r, "id")
 	if idStr == "" {
 		http.Error(w, "missing id", http.StatusBadRequest)
 		return

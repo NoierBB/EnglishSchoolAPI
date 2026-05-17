@@ -7,6 +7,7 @@ import (
 
 	"github.com/NoierBB/englishSchool/internal/models"
 	"github.com/NoierBB/englishSchool/internal/services"
+	"github.com/go-chi/chi/v5"
 )
 
 type UserHandlerFacade struct {
@@ -50,7 +51,7 @@ func (hp *UserHandlerFacade) GetUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (hp *UserHandlerFacade) GetUserById(w http.ResponseWriter, r *http.Request) {
-	idStr := r.URL.Query().Get("id")
+	idStr := chi.URLParam(r, "id")
 	if idStr == "" {
 		http.Error(w, "missing id", http.StatusBadRequest)
 		return
@@ -94,7 +95,7 @@ func (hp *UserHandlerFacade) UpdateUser(w http.ResponseWriter, r *http.Request) 
 }
 
 func (hp *UserHandlerFacade) DeleteUser(w http.ResponseWriter, r *http.Request) {
-	idStr := r.URL.Query().Get("id")
+	idStr := chi.URLParam(r, "id")
 	if idStr == "" {
 		http.Error(w, "missing id", http.StatusBadRequest)
 		return
