@@ -1,8 +1,8 @@
 package models
 
 type Group struct {
-	Id        int
-	Name      string
-	Level     string
-	TeacherId int
+	Id        int    `json:"id"`
+	Name      string `json:"name"`
+	Level     string `json:"level"`
+	TeacherId int    `json:"teacher_id"`
 }

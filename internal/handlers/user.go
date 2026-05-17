@@ -1,28 +1,20 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
 
 	"github.com/NoierBB/englishSchool/internal/models"
+	"github.com/NoierBB/englishSchool/internal/services"
 )
 
-type UserRepo interface {
-	CreateUser(ctx context.Context, u models.User) (int, error)
-	GetUsers(ctx context.Context) ([]models.User, error)
-	GetUserById(ctx context.Context, id int) (*models.User, error)
-	UpdateUser(ctx context.Context, u models.User) error
-	DeleteUser(ctx context.Context, id int) error
-}
-
 type UserHandlerFacade struct {
-	repo UserRepo
+	service services.UserService
 }
 
-func NewUserHandlerFacade(r UserRepo) *UserHandlerFacade {
-	return &UserHandlerFacade{repo: r}
+func NewUserHandlerFacade(service services.UserService) *UserHandlerFacade {
+	return &UserHandlerFacade{service: service}
 }
 
 func (hp *UserHandlerFacade) CreateUser(w http.ResponseWriter, r *http.Request) {
@@ -33,7 +25,7 @@ func (hp *UserHandlerFacade) CreateUser(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	id, err := hp.repo.CreateUser(r.Context(), u)
+	id, err := hp.service.CreateUser(r.Context(), u)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -44,7 +36,7 @@ func (hp *UserHandlerFacade) CreateUser(w http.ResponseWriter, r *http.Request) 
 }
 
 func (hp *UserHandlerFacade) GetUsers(w http.ResponseWriter, r *http.Request) {
-	users, err := hp.repo.GetUsers(r.Context())
+	users, err := hp.service.GetUsers(r.Context())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -68,7 +60,7 @@ func (hp *UserHandlerFacade) GetUserById(w http.ResponseWriter, r *http.Request)
 		http.Error(w, "invalid id", http.StatusBadRequest)
 		return
 	}
-	user, err := hp.repo.GetUserById(r.Context(), id)
+	user, err := hp.service.GetUserById(r.Context(), id)
 	if err != nil {
 		if err.Error() == "user not found" {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -92,7 +84,7 @@ func (hp *UserHandlerFacade) UpdateUser(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	err := hp.repo.UpdateUser(r.Context(), u)
+	err := hp.service.UpdateUser(r.Context(), u)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -114,7 +106,7 @@ func (hp *UserHandlerFacade) DeleteUser(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	err = hp.repo.DeleteUser(r.Context(), id)
+	err = hp.service.DeleteUser(r.Context(), id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

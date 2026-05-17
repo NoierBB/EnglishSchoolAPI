@@ -6,14 +6,21 @@ import (
 	"fmt"
 
 	"github.com/NoierBB/englishSchool/internal/models"
-	"github.com/NoierBB/englishSchool/pkg/db"
 )
 
-type UserRepository struct {
-	db *db.PostgresDB
+type UserRepo interface {
+	CreateUser(ctx context.Context, u models.User) (int, error)
+	GetUsers(ctx context.Context) ([]models.User, error)
+	GetUserById(ctx context.Context, id int) (*models.User, error)
+	UpdateUser(ctx context.Context, u models.User) error
+	DeleteUser(ctx context.Context, id int) error
 }
 
-func NewUserRepository(db *db.PostgresDB) *UserRepository {
+type UserRepository struct {
+	db *sql.DB
+}
+
+func NewUserRepository(db *sql.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
 
@@ -24,7 +31,7 @@ func (r *UserRepository) CreateUser(ctx context.Context, u models.User) (int, er
 	RETURNING id`
 
 	var id int
-	err := r.db.DB.QueryRowContext(ctx, query, u.Email, u.Password, u.Role).Scan(&id)
+	err := r.db.QueryRowContext(ctx, query, u.Email, u.Password, u.Role).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("create user: %w", err)
 	}
@@ -35,7 +42,7 @@ func (r *UserRepository) GetUsers(ctx context.Context) ([]models.User, error) {
 	var users []models.User
 
 	const query = `SELECT id, email, password_hash, role FROM users ORDER BY id`
-	rows, err := r.db.DB.QueryContext(ctx, query)
+	rows, err := r.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("select users: %w", err)
 	}
@@ -60,7 +67,7 @@ func (r *UserRepository) GetUserById(ctx context.Context, id int) (*models.User,
 
 	var users models.User
 
-	err := r.db.DB.QueryRowContext(ctx, query, id).
+	err := r.db.QueryRowContext(ctx, query, id).
 		Scan(&users.Id, &users.Email, &users.Password, &users.Role)
 
 	if err != nil {
@@ -77,7 +84,7 @@ func (r *UserRepository) UpdateUser(ctx context.Context, u models.User) error {
 	SET email=$1, password_hash=$2, role=$3
 	WHERE id=$4`
 
-	res, err := r.db.DB.ExecContext(ctx, query, u.Email, u.Password, u.Role, u.Id)
+	res, err := r.db.ExecContext(ctx, query, u.Email, u.Password, u.Role, u.Id)
 
 	if err != nil {
 		return fmt.Errorf("update user: %w", err)
@@ -93,7 +100,7 @@ func (r *UserRepository) UpdateUser(ctx context.Context, u models.User) error {
 func (r *UserRepository) DeleteUser(ctx context.Context, id int) error {
 	const query = `DELETE FROM users WHERE id = $1`
 
-	res, err := r.db.DB.ExecContext(ctx, query, id)
+	res, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
 		return fmt.Errorf("delete user: %w", err)
 	}

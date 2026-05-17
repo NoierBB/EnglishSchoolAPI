@@ -8,6 +8,7 @@ import (
 	"github.com/NoierBB/englishSchool/internal/config"
 	"github.com/NoierBB/englishSchool/internal/handlers"
 	"github.com/NoierBB/englishSchool/internal/repositories"
+	"github.com/NoierBB/englishSchool/internal/router"
 	"github.com/NoierBB/englishSchool/pkg/db"
 )
 
@@ -25,69 +26,24 @@ func main() {
 	}
 	defer database.Close()
 
-	studentsRepo := repositories.NewStudentRepository(database)
-	userRepo := repositories.NewUserRepository(database)
+	studentsRepo := repositories.NewStudentRepository(database.DB)
+	userRepo := repositories.NewUserRepository(database.DB)
+	groupRepo := repositories.NewGropRepo(database.DB)
 
 	handler := handlers.NewHandlerFacade(studentsRepo)
 	handlerUser := handlers.NewUserHandlerFacade(userRepo)
+	handlerGroup := handlers.NewGroupHandlerFacade(groupRepo)
 
-	mux := http.NewServeMux()
-
-	mux.HandleFunc("/students", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			handler.GetStudents(w, r)
-		case http.MethodPost:
-			handler.CreateStudent(w, r)
-		default:
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		}
-	})
-
-	mux.HandleFunc("/student", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			handler.GetStudentById(w, r)
-		case http.MethodPut:
-			handler.UpdateStudent(w, r)
-		case http.MethodDelete:
-			handler.DeleteStudent(w, r)
-		default:
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		}
-	})
-
-	mux.HandleFunc("/user", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodPost:
-			handlerUser.CreateUser(w, r)
-		case http.MethodGet:
-			handlerUser.GetUserById(w, r)
-		case http.MethodPut:
-			handlerUser.UpdateUser(w, r)
-		case http.MethodDelete:
-			handlerUser.DeleteUser(w, r)
-		default:
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		}
-	})
-	mux.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			handlerUser.GetUsers(w, r)
-		default:
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		}
-	})
+	r := router.NewRouter(handler, handlerUser, handlerGroup)
 
 	server := &http.Server{
 		Addr:         ":" + cfg.HTTPPort,
-		Handler:      mux,
+		Handler:      r,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
 
-	log.Println("server started")
+	log.Println("server started on port", cfg.HTTPPort)
 
 	if err := server.ListenAndServe(); err != nil {
 		log.Fatalf("server error: %v", err)

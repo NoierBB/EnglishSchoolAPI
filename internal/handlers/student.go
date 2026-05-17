@@ -1,28 +1,20 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
 
 	"github.com/NoierBB/englishSchool/internal/models"
+	"github.com/NoierBB/englishSchool/internal/services"
 )
 
-type StudentsRepo interface {
-	CreateStudent(ctx context.Context, s models.Students) (int, error)
-	GetStudents(ctx context.Context) ([]models.Students, error)
-	GetStudentById(ctx context.Context, id int) (*models.Students, error)
-	UpdateStudent(ctx context.Context, s models.Students) error
-	DeleteStudent(ctx context.Context, id int) error
-}
-
 type HandlerFacade struct {
-	repo StudentsRepo
+	service services.StudentService
 }
 
-func NewHandlerFacade(r StudentsRepo) *HandlerFacade {
-	return &HandlerFacade{repo: r}
+func NewHandlerFacade(service services.StudentService) *HandlerFacade {
+	return &HandlerFacade{service: service}
 }
 
 func (hp *HandlerFacade) CreateStudent(w http.ResponseWriter, r *http.Request) {
@@ -33,7 +25,7 @@ func (hp *HandlerFacade) CreateStudent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := hp.repo.CreateStudent(r.Context(), s)
+	id, err := hp.service.CreateStudent(r.Context(), s)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -44,7 +36,7 @@ func (hp *HandlerFacade) CreateStudent(w http.ResponseWriter, r *http.Request) {
 }
 
 func (hp *HandlerFacade) GetStudents(w http.ResponseWriter, r *http.Request) {
-	students, err := hp.repo.GetStudents(r.Context())
+	students, err := hp.service.GetStudents(r.Context())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -69,7 +61,7 @@ func (hp *HandlerFacade) GetStudentById(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, "invalid id", http.StatusBadRequest)
 		return
 	}
-	student, err := hp.repo.GetStudentById(r.Context(), id)
+	student, err := hp.service.GetStudentById(r.Context(), id)
 	if err != nil {
 		if err.Error() == "students not found" {
 			http.Error(w, err.Error(), http.StatusNotFound)
@@ -93,7 +85,7 @@ func (hp *HandlerFacade) UpdateStudent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := hp.repo.UpdateStudent(r.Context(), s)
+	err := hp.service.UpdateStudent(r.Context(), s)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -115,7 +107,7 @@ func (hp *HandlerFacade) DeleteStudent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = hp.repo.DeleteStudent(r.Context(), id)
+	err = hp.service.DeleteStudent(r.Context(), id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

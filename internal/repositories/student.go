@@ -6,14 +6,21 @@ import (
 	"fmt"
 
 	"github.com/NoierBB/englishSchool/internal/models"
-	db "github.com/NoierBB/englishSchool/pkg/db"
 )
 
-type StudentRepository struct {
-	db *db.PostgresDB
+type StudentsRepository interface {
+	CreateStudent(ctx context.Context, s models.Students) (int, error)
+	GetStudents(ctx context.Context) ([]models.Students, error)
+	GetStudentById(ctx context.Context, id int) (*models.Students, error)
+	UpdateStudent(ctx context.Context, s models.Students) error
+	DeleteStudent(ctx context.Context, id int) error
 }
 
-func NewStudentRepository(db *db.PostgresDB) *StudentRepository {
+type StudentRepository struct {
+	db *sql.DB
+}
+
+func NewStudentRepository(db *sql.DB) *StudentRepository {
 	return &StudentRepository{db: db}
 }
 
@@ -24,7 +31,7 @@ func (r *StudentRepository) CreateStudent(ctx context.Context, s models.Students
 		RETURNING id`
 
 	var id int
-	err := r.db.DB.QueryRowContext(ctx, query,
+	err := r.db.QueryRowContext(ctx, query,
 		s.UserId, s.Name, s.Age, s.Level,
 	).Scan(&id)
 	if err != nil {
@@ -37,7 +44,7 @@ func (r *StudentRepository) GetStudents(ctx context.Context) ([]models.Students,
 	var students []models.Students
 
 	const query = `SELECT id, user_id, name, age, level FROM students ORDER BY id`
-	rows, err := r.db.DB.QueryContext(ctx, query)
+	rows, err := r.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("select student: %w", err)
 	}
@@ -63,7 +70,7 @@ func (r *StudentRepository) GetStudentById(ctx context.Context, id int) (*models
 
 	var students models.Students
 
-	err := r.db.DB.QueryRowContext(ctx, query, id).
+	err := r.db.QueryRowContext(ctx, query, id).
 		Scan(&students.Id, &students.UserId, &students.Name, &students.Age, &students.Level)
 
 	if err != nil {
@@ -80,7 +87,7 @@ func (r *StudentRepository) UpdateStudent(ctx context.Context, s models.Students
 					SET user_id = $1, name = $2, age = $3, level = $4
 					WHERE id = $5`
 
-	res, err := r.db.DB.ExecContext(ctx, query, s.UserId, s.Name, s.Age, s.Level, s.Id)
+	res, err := r.db.ExecContext(ctx, query, s.UserId, s.Name, s.Age, s.Level, s.Id)
 
 	if err != nil {
 		return fmt.Errorf("update student: %w", err)
@@ -96,7 +103,7 @@ func (r *StudentRepository) UpdateStudent(ctx context.Context, s models.Students
 func (r *StudentRepository) DeleteStudent(ctx context.Context, id int) error {
 	const query = `DELETE FROM students WHERE id=$1`
 
-	res, err := r.db.DB.ExecContext(ctx, query, id)
+	res, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
 		return fmt.Errorf("delete student: %w", err)
 	}
