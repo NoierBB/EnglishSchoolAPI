@@ -1,6 +1,7 @@
 package router
 
 import (
+	"log"
 	"net/http"
 	"time"
 
@@ -9,11 +10,18 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+func PrintRoutes(r chi.Router) {
+	chi.Walk(r, func(method, route string, handler http.Handler, middlewares ...func(http.Handler) http.Handler) error {
+		log.Printf("%s %s", method, route)
+		return nil
+	})
+}
+
 func NewRouter(
 	studentHandler *handlers.HandlerFacade,
 	userHandler *handlers.UserHandlerFacade,
 	groupHandler *handlers.GroupHandlerFacade,
-) http.Handler {
+) chi.Router {
 	r := chi.NewRouter()
 
 	r.Use(middleware.Logger)
@@ -46,6 +54,14 @@ func NewRouter(
 	r.Route("/groups", func(r chi.Router) {
 		r.Get("/", groupHandler.GetGroup)
 		r.Post("/", groupHandler.CreateGroup)
+
+		r.Route("/{id}", func(r chi.Router) {
+			r.Post("/students", groupHandler.AddStudent)
+		})
+	})
+	r.Route("/auth", func(r chi.Router) {
+		r.Post("/register", userHandler.Register)
+		r.Post("/login", userHandler.Login)
 	})
 	return r
 }

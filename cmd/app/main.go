@@ -9,6 +9,7 @@ import (
 	"github.com/NoierBB/englishSchool/internal/handlers"
 	"github.com/NoierBB/englishSchool/internal/repositories"
 	"github.com/NoierBB/englishSchool/internal/router"
+	"github.com/NoierBB/englishSchool/internal/services"
 	"github.com/NoierBB/englishSchool/pkg/db"
 )
 
@@ -30,12 +31,16 @@ func main() {
 	userRepo := repositories.NewUserRepository(database.DB)
 	groupRepo := repositories.NewGropRepo(database.DB)
 
+	jwtSecret := cfg.JWTSecret
+	userService := services.NewAuthService(userRepo, jwtSecret)
+
 	handler := handlers.NewHandlerFacade(studentsRepo)
-	handlerUser := handlers.NewUserHandlerFacade(userRepo)
+	handlerUser := handlers.NewUserHandlerFacade(userService)
 	handlerGroup := handlers.NewGroupHandlerFacade(groupRepo)
 
 	r := router.NewRouter(handler, handlerUser, handlerGroup)
-
+	log.Println("Available routes:")
+	router.PrintRoutes(r)
 	server := &http.Server{
 		Addr:         ":" + cfg.HTTPPort,
 		Handler:      r,
@@ -48,4 +53,5 @@ func main() {
 	if err := server.ListenAndServe(); err != nil {
 		log.Fatalf("server error: %v", err)
 	}
+
 }

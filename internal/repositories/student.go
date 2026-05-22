@@ -14,6 +14,7 @@ type StudentsRepository interface {
 	GetStudentById(ctx context.Context, id int) (*models.Students, error)
 	UpdateStudent(ctx context.Context, s models.Students) error
 	DeleteStudent(ctx context.Context, id int) error
+	EmailIsExist(ctx context.Context, email string) (bool, error)
 }
 
 type StudentRepository struct {
@@ -22,6 +23,18 @@ type StudentRepository struct {
 
 func NewStudentRepository(db *sql.DB) *StudentRepository {
 	return &StudentRepository{db: db}
+}
+
+func (r *StudentRepository) EmailIsExist(ctx context.Context, UserId string) (bool, error) {
+	var exist bool
+
+	query := `SELECT EXISTS(SELECT 1 FROM students WHERE id = $1)`
+
+	err := r.db.QueryRowContext(ctx, query, UserId).Scan(&exist)
+	if err != nil {
+		return false, err
+	}
+	return exist, nil
 }
 
 func (r *StudentRepository) CreateStudent(ctx context.Context, s models.Students) (int, error) {

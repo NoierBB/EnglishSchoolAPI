@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/NoierBB/englishSchool/internal/models"
@@ -14,6 +15,10 @@ type UserRepo interface {
 	GetUserById(ctx context.Context, id int) (*models.User, error)
 	UpdateUser(ctx context.Context, u models.User) error
 	DeleteUser(ctx context.Context, id int) error
+	ExistByEmail(ctx context.Context, email string) (bool, error)
+	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
+	Register(ctx context.Context, email, password string) (int, error)
+	Login(ctx context.Context, email, password string) (string, error)
 }
 
 type UserRepository struct {
@@ -22,6 +27,29 @@ type UserRepository struct {
 
 func NewUserRepository(db *sql.DB) *UserRepository {
 	return &UserRepository{db: db}
+}
+
+func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
+	var user models.User
+	const query = `SELECT id, email, password_hash, role
+	FROM users WHERE email = $1`
+
+	err := r.db.QueryRowContext(ctx, query, email).Scan(&user.Id, &user.Email, &user.Password, &user.Role)
+
+	if err == sql.ErrNoRows {
+		return nil, errors.New("user not found")
+	}
+	return &user, err
+}
+
+func (r *UserRepository) ExistByEmail(ctx context.Context, email string) (bool, error) {
+	var exist bool
+
+	const query = `SELECT EXISTS (SELECT 1 FROM users WHERE email = $1)`
+
+	err := r.db.QueryRowContext(ctx, query, email).Scan(&exist)
+
+	return exist, err
 }
 
 func (r *UserRepository) CreateUser(ctx context.Context, u models.User) (int, error) {

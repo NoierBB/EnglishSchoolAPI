@@ -11,6 +11,8 @@ import (
 type GroupRepository interface {
 	CreateGroup(ctx context.Context, g models.Group) (int, error)
 	GetGroup(ctx context.Context) ([]models.Group, error)
+	GetGroupById(ctx context.Context, id int) (*models.Group, error)
+	AddStudent(ctx context.Context, groupId, studentId int) error
 }
 
 type GroupRepo struct {
@@ -55,4 +57,24 @@ func (r *GroupRepo) GetGroup(ctx context.Context) ([]models.Group, error) {
 		return nil, fmt.Errorf("rows error: %w", err)
 	}
 	return groups, nil
+}
+
+func (r *GroupRepo) GetGroupById(ctx context.Context, id int) (*models.Group, error) {
+	const query = `SELECT id, name FROM groups WHERE id = $1`
+
+	var group models.Group
+	err := r.db.QueryRowContext(ctx, query, id).Scan(&group.Id, &group.Name)
+	if err != nil {
+		return nil, err
+	}
+	return &group, nil
+}
+
+func (r *GroupRepo) AddStudent(ctx context.Context, groupId, studentId int) error {
+	const query = `INSERT INTO group_students (group_id, student_id)
+	VALUES ($1, $2)
+	ON CONFLICT DO NOTHING`
+
+	_, err := r.db.ExecContext(ctx, query, groupId, studentId)
+	return err
 }

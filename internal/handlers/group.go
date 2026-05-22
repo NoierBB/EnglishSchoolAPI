@@ -3,9 +3,11 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/NoierBB/englishSchool/internal/models"
 	"github.com/NoierBB/englishSchool/internal/services"
+	"github.com/go-chi/chi/v5"
 )
 
 type GroupHandlerFacade struct {
@@ -45,4 +47,25 @@ func (hp *GroupHandlerFacade) GetGroup(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to encode response", http.StatusInternalServerError)
 		return
 	}
+}
+
+func (hp *GroupHandlerFacade) AddStudent(w http.ResponseWriter, r *http.Request) {
+	groupId, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "invalid group id", 400)
+		return
+	}
+	var req struct {
+		StudentID int `json:"student_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "bad request", 400)
+		return
+	}
+	err = hp.service.AddStudent(r.Context(), groupId, req.StudentID)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
