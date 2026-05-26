@@ -8,6 +8,7 @@ import (
 	"github.com/NoierBB/englishSchool/internal/handlers"
 	"github.com/NoierBB/englishSchool/internal/middleware"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/cors"
 )
 
 func PrintRoutes(r chi.Router) {
@@ -23,15 +24,20 @@ func NewRouter(
 	groupHandler *handlers.GroupHandlerFacade,
 ) chi.Router {
 	r := chi.NewRouter()
-
-	r.Use(middleware.Logger)
 	r.Use(middleware.Recover)
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders: []string{"*"},
+	}))
+	r.Use(middleware.Logger)
+
 	r.Use(middleware.RequestId)
 	r.Use(middleware.Timeout(5 * time.Second))
 
 	r.Route("/students", func(r chi.Router) {
 		r.Get("/", studentHandler.GetStudents)
-		r.Post("/", studentHandler.CreateStudent)
+		// r.Post("/register", studentHandler.CreateStudent)
 
 		r.Route("/{id}", func(r chi.Router) {
 			r.Get("/", studentHandler.GetStudentById)
@@ -57,10 +63,13 @@ func NewRouter(
 
 		r.Route("/{id}", func(r chi.Router) {
 			r.Post("/students", groupHandler.AddStudent)
+			r.Get("/students", groupHandler.GetStudentGroup)
 		})
 	})
 	r.Route("/auth", func(r chi.Router) {
-		r.Post("/register", userHandler.Register)
+		r.Route("/register", func(r chi.Router) {
+			r.Post("/student", studentHandler.RegisterStudent)
+		})
 		r.Post("/login", userHandler.Login)
 	})
 	return r

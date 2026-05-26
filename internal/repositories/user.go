@@ -52,6 +52,20 @@ func (r *UserRepository) ExistByEmail(ctx context.Context, email string) (bool, 
 	return exist, err
 }
 
+func (r *UserRepository) CreateUserTx(ctx context.Context, tx *sql.Tx, u models.User) (int, error) {
+	const query = `INSERT INTO users (email, password_hash, role)
+	
+	VALUES ($1, $2, $3)
+	RETURNING id`
+
+	var id int
+	err := tx.QueryRowContext(ctx, query, u.Email, u.Password, u.Role).Scan(&id)
+	if err != nil {
+		return 0, fmt.Errorf("create user: %w", err)
+	}
+	return id, err
+}
+
 func (r *UserRepository) CreateUser(ctx context.Context, u models.User) (int, error) {
 	const query = `INSERT INTO users (email, password_hash, role)
 	
@@ -63,7 +77,7 @@ func (r *UserRepository) CreateUser(ctx context.Context, u models.User) (int, er
 	if err != nil {
 		return 0, fmt.Errorf("create user: %w", err)
 	}
-	return id, nil
+	return id, err
 }
 
 func (r *UserRepository) GetUsers(ctx context.Context) ([]models.User, error) {

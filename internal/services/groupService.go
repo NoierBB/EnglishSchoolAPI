@@ -13,6 +13,7 @@ type GroupService interface {
 	GetGroup(ctx context.Context) ([]models.Group, error)
 	GetGroupById(ctx context.Context, id int) (*models.Group, error)
 	AddStudent(ctx context.Context, groupId, studentId int) error
+	GetStudentGroup(ctx context.Context, groupId int) ([]models.Students, error)
 }
 
 type groupService struct {
@@ -36,4 +37,8 @@ func (s *groupService) AddStudent(ctx context.Context, groupId, studentId int) e
 		return errors.New("student not found")
 	}
 	return s.gRepo.AddStudent(ctx, groupId, studentId)
+}
+
+func (s *groupService) GetStudentGroup(ctx context.Context, groupId int) ([]models.Students, error) {
+	return s.gRepo.GetStudentGroup(ctx, groupId)
 }

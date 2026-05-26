@@ -25,8 +25,8 @@ func NewStudentRepository(repo repositories.StudentRepository) *studentService {
 	return &studentService{repo: repo}
 }
 
-func (s *studentService) CreateStudent(ctx context.Context, student models.Students) error {
-	if student.Name == "" {
+func (s *studentService) CreateStudent(ctx context.Context, st models.Students) error {
+	if st.Name == "" {
 		return errors.New("name is requred")
 	}
 	return nil

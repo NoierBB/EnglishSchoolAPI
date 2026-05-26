@@ -37,6 +37,22 @@ func (r *StudentRepository) EmailIsExist(ctx context.Context, UserId string) (bo
 	return exist, nil
 }
 
+func (r *StudentRepository) CreateStudentTx(ctx context.Context, tx *sql.Tx, s models.Students) (int, error) {
+	const query = `INSERT INTO students (user_id, name, age, level)
+
+		VALUES ($1, $2, $3, $4)
+		RETURNING id`
+
+	var id int
+	err := tx.QueryRowContext(ctx, query,
+		s.UserId, s.Name, s.Age, s.Level,
+	).Scan(&id)
+	if err != nil {
+		return 0, fmt.Errorf("create student: %w", err)
+	}
+	return id, err
+}
+
 func (r *StudentRepository) CreateStudent(ctx context.Context, s models.Students) (int, error) {
 	const query = `INSERT INTO students (user_id, name, age, level)
 
@@ -50,7 +66,7 @@ func (r *StudentRepository) CreateStudent(ctx context.Context, s models.Students
 	if err != nil {
 		return 0, fmt.Errorf("create student: %w", err)
 	}
-	return id, nil
+	return id, err
 }
 
 func (r *StudentRepository) GetStudents(ctx context.Context) ([]models.Students, error) {

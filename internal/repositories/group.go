@@ -13,6 +13,7 @@ type GroupRepository interface {
 	GetGroup(ctx context.Context) ([]models.Group, error)
 	GetGroupById(ctx context.Context, id int) (*models.Group, error)
 	AddStudent(ctx context.Context, groupId, studentId int) error
+	GetStudentGroup(ctx context.Context, groupId int) ([]models.Students, error)
 }
 
 type GroupRepo struct {
@@ -77,4 +78,29 @@ func (r *GroupRepo) AddStudent(ctx context.Context, groupId, studentId int) erro
 
 	_, err := r.db.ExecContext(ctx, query, groupId, studentId)
 	return err
+}
+
+func (r *GroupRepo) GetStudentGroup(ctx context.Context, groupId int) ([]models.Students, error) {
+	const query = `SELECT s.id, s.name, s.age 
+	FROM students s
+	JOIN group_students gs ON gs.student_id = s.id
+	WHERE gs.group_id = $1`
+
+	rows, err := r.db.QueryContext(ctx, query, groupId)
+	if err != nil {
+		return nil, fmt.Errorf("rows error: %w", err)
+	}
+	defer rows.Close()
+	var students []models.Students
+	for rows.Next() {
+		var s models.Students
+		if err := rows.Scan(&s.Id, &s.Name, &s.Age); err != nil {
+			return nil, fmt.Errorf("students scan: %w", err)
+		}
+		students = append(students, s)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows err:%w", err)
+	}
+	return students, nil
 }

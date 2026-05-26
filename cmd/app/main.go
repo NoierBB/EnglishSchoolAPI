@@ -14,7 +14,10 @@ import (
 )
 
 func main() {
+	log.Println("Starting server...")
+
 	cfg := config.Load()
+	log.Println("Config loaded")
 
 	database, err := db.NewDBConnect(
 		cfg.DBUser,
@@ -26,21 +29,32 @@ func main() {
 		log.Fatalf("db error: %v", err)
 	}
 	defer database.Close()
+	log.Println("Database connected")
 
 	studentsRepo := repositories.NewStudentRepository(database.DB)
 	userRepo := repositories.NewUserRepository(database.DB)
+
 	groupRepo := repositories.NewGropRepo(database.DB)
 
-	jwtSecret := cfg.JWTSecret
-	userService := services.NewAuthService(userRepo, jwtSecret)
+	log.Println("Repositories created")
 
-	handler := handlers.NewHandlerFacade(studentsRepo)
-	handlerUser := handlers.NewUserHandlerFacade(userService)
+	jwtSecret := cfg.JWTSecret
+	log.Printf("JWT secret length: %d", len(jwtSecret))
+
+	authService := services.NewAuthService(userRepo, studentsRepo, database.DB, jwtSecret)
+
+	handler := handlers.NewHandlerFacade(studentsRepo, *authService)
+	handlerUser := handlers.NewUserHandlerFacade(authService)
 	handlerGroup := handlers.NewGroupHandlerFacade(groupRepo)
 
+	log.Println("Handlers created")
+
 	r := router.NewRouter(handler, handlerUser, handlerGroup)
+	log.Println("Router created")
+
 	log.Println("Available routes:")
 	router.PrintRoutes(r)
+
 	server := &http.Server{
 		Addr:         ":" + cfg.HTTPPort,
 		Handler:      r,
@@ -48,10 +62,9 @@ func main() {
 		WriteTimeout: 10 * time.Second,
 	}
 
-	log.Println("server started on port", cfg.HTTPPort)
+	log.Printf("Server started on port %s", cfg.HTTPPort)
 
 	if err := server.ListenAndServe(); err != nil {
 		log.Fatalf("server error: %v", err)
 	}
-
 }

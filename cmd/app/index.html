@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>API Panel</title>
+<style>
+body { font-family: Arial; background:#111; color:#eee; padding:20px; }
+input, button { margin:5px; padding:8px; }
+button { cursor:pointer; }
+section { border:1px solid #333; padding:15px; margin-bottom:20px; }
+</style>
+</head>
+
+<body>
+
+<h1>🔥 English School API Panel</h1>
+
+<div>API: <b>http://localhost:8080</b></div>
+
+<!-- GROUPS -->
+<section>
+<h2>📚 Groups</h2>
+
+<input id="groupName" placeholder="name">
+<input id="groupLevel" placeholder="level" type="number">
+<input id="groupTeacher" placeholder="teacher_id" type="number">
+
+<button onclick="createGroup()">Create</button>
+<button onclick="getGroups()">Get all</button>
+
+<ul id="groups"></ul>
+</section>
+
+<!-- STUDENTS -->
+<section>
+<h2>👨‍🎓 Students</h2>
+
+<input id="studentUserId" placeholder="user_id" type="number">
+<input id="studentName" placeholder="name">
+<input id="studentAge" placeholder="age" type="number">
+<input id="studentLevel" placeholder="level" type="number">
+
+<button onclick="createStudent()">Create</button>
+<button onclick="getStudents()">Get all</button>
+
+<br>
+
+<input id="studentId" placeholder="student id">
+
+<button onclick="getStudent()">GET</button>
+<button onclick="updateStudent()">PUT</button>
+<button onclick="deleteStudent()">DELETE</button>
+
+<ul id="students"></ul>
+</section>
+
+<!-- GROUP STUDENTS -->
+<section>
+<h2>🔗 Group ↔ Students</h2>
+
+<input id="groupId" placeholder="group id">
+<input id="linkStudentId" placeholder="student id">
+
+<button onclick="addStudentToGroup()">Add</button>
+<button onclick="getGroupStudents()">Get</button>
+
+<ul id="groupStudents"></ul>
+</section>
+
+<!-- LOG -->
+<section>
+<h2>📜 Log</h2>
+<pre id="log"></pre>
+</section>
+
+<script>
+const API = "http://localhost:8080";
+
+function log(data) {
+    document.getElementById("log").textContent =
+        typeof data === "string" ? data : JSON.stringify(data, null, 2);
+}
+
+/* ---------------- GROUPS ---------------- */
+
+async function createGroup() {
+    const name = document.getElementById("groupName").value;
+    const level = Number(document.getElementById("groupLevel").value);
+    const teacher_id = Number(document.getElementById("groupTeacher").value);
+
+    const res = await fetch(`${API}/groups/`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ name, level, teacher_id })
+    });
+
+    log(await res.json());
+}
+
+async function getGroups() {
+    const res = await fetch(`${API}/groups/`);
+    const data = await res.json();
+
+    const list = document.getElementById("groups");
+    list.innerHTML = "";
+
+    data.forEach(g => {
+        const li = document.createElement("li");
+        li.textContent = `${g.id} | ${g.name} | lvl:${g.level}`;
+        list.appendChild(li);
+    });
+}
+
+/* ---------------- STUDENTS ---------------- */
+
+async function createStudent() {
+    const user_id = Number(document.getElementById("studentUserId").value);
+    const name = document.getElementById("studentName").value;
+    const age = Number(document.getElementById("studentAge").value);
+    const level = Number(document.getElementById("studentLevel").value);
+
+    const res = await fetch(`${API}/students/`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ user_id, name, age, level })
+    });
+
+    log(await res.json());
+}
+
+async function getStudents() {
+    const res = await fetch(`${API}/students/`);
+    const data = await res.json();
+
+    const list = document.getElementById("students");
+    list.innerHTML = "";
+
+    data.forEach(s => {
+        const li = document.createElement("li");
+        li.textContent = `${s.id} | ${s.name} | age:${s.age}`;
+        list.appendChild(li);
+    });
+}
+
+async function getStudent() {
+    const id = document.getElementById("studentId").value;
+
+    const res = await fetch(`${API}/students/${id}/`);
+    log(await res.json());
+}
+
+async function updateStudent() {const id = document.getElementById("studentId").value;
+    const user_id = Number(document.getElementById("studentUserId").value);
+    const name = document.getElementById("studentName").value;
+    const age = Number(document.getElementById("studentAge").value);
+    const level = Number(document.getElementById("studentLevel").value);
+
+    const res = await fetch(`${API}/students/${id}/`, {
+        method: "PUT",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ id: Number(id), user_id, name, age, level })
+    });
+
+    log(await res.json());
+}
+
+async function deleteStudent() {
+    const id = document.getElementById("studentId").value;
+
+    await fetch(`${API}/students/${id}/`, {
+        method: "DELETE"
+    });
+
+    log("deleted");
+}
+
+/* ---------------- GROUP-STUDENTS ---------------- */
+
+async function addStudentToGroup() {
+    const groupId = document.getElementById("groupId").value;
+    const studentId = document.getElementById("linkStudentId").value;
+
+    const res = await fetch(`${API}/groups/${groupId}/students`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ student_id: Number(studentId) })
+    });
+
+    log(await res.text());
+}
+
+async function getGroupStudents() {
+    const groupId = document.getElementById("groupId").value;
+
+    const res = await fetch(`${API}/groups/${groupId}/students`);
+    const data = await res.json();
+
+    const list = document.getElementById("groupStudents");
+    list.innerHTML = "";
+
+    data.forEach(s => {
+        const li = document.createElement("li");
+        li.textContent = `${s.id} | ${s.name} | age:${s.age}`;
+        list.appendChild(li);
+    });
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,18 @@
+2026/05/26 17:43:44 Available routes:
+2026/05/26 17:43:44 POST /auth/login
+2026/05/26 17:43:44 POST /auth/register/student
+2026/05/26 17:43:44 GET /groups/
+2026/05/26 17:43:44 POST /groups/
+2026/05/26 17:43:44 POST /groups/{id}/students
+2026/05/26 17:43:44 GET /groups/{id}/students
+2026/05/26 17:43:44 GET /students/
+2026/05/26 17:43:44 PUT /students/{id}/
+2026/05/26 17:43:44 DELETE /students/{id}/
+2026/05/26 17:43:44 GET /students/{id}/
+2026/05/26 17:43:44 GET /users/
+2026/05/26 17:43:44 POST /users/
+2026/05/26 17:43:44 GET /users/{id}/
+2026/05/26 17:43:44 PUT /users/{id}/
+2026/05/26 17:43:44 DELETE /users/{id}/
+2026/05/26 17:43:44 server started on port 8080
+2026/05/26 17:43:49 panic: runtime error: invalid memory address or nil pointer dereference

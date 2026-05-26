@@ -69,3 +69,15 @@ func (hp *GroupHandlerFacade) AddStudent(w http.ResponseWriter, r *http.Request)
 	}
 	w.WriteHeader(http.StatusOK)
 }
+
+func (hp *GroupHandlerFacade) GetStudentGroup(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	groupId, _ := strconv.Atoi(idStr)
+
+	students, err := hp.service.GetStudentGroup(r.Context(), groupId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	json.NewEncoder(w).Encode(students)
+}

@@ -2,40 +2,61 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 
+	"github.com/NoierBB/englishSchool/internal/dto"
 	"github.com/NoierBB/englishSchool/internal/models"
 	"github.com/NoierBB/englishSchool/internal/services"
 	"github.com/go-chi/chi/v5"
 )
 
 type HandlerFacade struct {
-	service services.StudentService
+	service     services.StudentService
+	userService services.UserService
+	authService *services.AuthService
 }
 
-func NewHandlerFacade(service services.StudentService) *HandlerFacade {
-	return &HandlerFacade{service: service}
+func NewHandlerFacade(service services.StudentService, authService services.AuthService) *HandlerFacade {
+	return &HandlerFacade{service: service, authService: &authService}
 }
 
-func (hp *HandlerFacade) CreateStudent(w http.ResponseWriter, r *http.Request) {
-	var s models.Students
+func (h *HandlerFacade) RegisterStudent(w http.ResponseWriter, r *http.Request) {
+	log.Println("=== RegisterStudent handler called ===")
 
-	if err := json.NewDecoder(r.Body).Decode(&s); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+	var req dto.RegisterStudentRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Printf("Failed to decode request: %v", err)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	id, err := hp.service.CreateStudent(r.Context(), s)
+	log.Printf("Request: Email=%s, Name=%s, Age=%d, Level=%s", req.Email, req.Name, req.Age, req.Level)
+
+	if h.authService == nil {
+		log.Println("ERROR: authService is nil in HandlerFacade")
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	userID, studentID, err := h.authService.RegisterStudent(r.Context(), req)
 	if err != nil {
+		log.Printf("RegisterStudent error: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]int{"id": id})
-}
+	log.Printf("Success: userID=%d, studentID=%d", userID, studentID)
 
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"user_id":    userID,
+		"student_id": studentID,
+		"message":    "Student registered successfully",
+	})
+}
 func (hp *HandlerFacade) GetStudents(w http.ResponseWriter, r *http.Request) {
 	students, err := hp.service.GetStudents(r.Context())
 	if err != nil {
